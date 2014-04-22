@@ -26,6 +26,14 @@ Ensure that the file is executable:
 sudo chmod +x /usr/bin/mkvhost
 ```
 
+You will also have to set your Apache config so that it loads all the generated virtual host files. This can be achieved by adding the following line to `httpd.conf` or your `/etc/apache2/extra/httpd-vhosts.conf` file (on mac):
+
+```
+Include /private/etc/apache2/virtualhosts/*.conf
+```
+
+This directory can be changed as explained below.
+
 ## Usage
 
 ```bash
