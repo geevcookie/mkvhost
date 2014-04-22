@@ -8,7 +8,23 @@ This is still in very early stages and extremely rough around the edges. Use at 
 
 ## Installation
 
-Todo
+Download the file with curl:
+
+```bash
+curl -O https://raw.github.com/geevcookie/mkvhost/master/mkvhost.sh
+```
+
+Move the file to your bin directory:
+
+```bash
+sudo mv mkvhost.sh /usr/bin/mkvhost
+```
+
+Ensure that the file is executable:
+
+```bash
+sudo chmod +x /usr/bin/mkvhost
+```
 
 ## Usage
 
