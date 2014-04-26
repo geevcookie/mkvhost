@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/geevcookie/mkvhost.png?label=ready&title=Ready)](https://waffle.io/geevcookie/mkvhost)
 # mkvhost
 
 Command line tool to create virtual host config files.
