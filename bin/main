@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+namespace Mkvhost;
+
+// Get composer in here.
+use Mkvhost\Commands\ListCommand;
+use Mkvhost\Commands\MakeCommand;
+
+include_once __DIR__.'/../vendor/autoload.php';
+
+// Create the app.
+$app = new Mkvhost();
+
+// Add the hidden commands.
+$app->add(new ListCommand());
+$app->add(new MakeCommand());
+
+// Run the application.
+$app->run();
