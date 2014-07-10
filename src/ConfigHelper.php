@@ -2,6 +2,8 @@
 
 namespace Mkvhost;
 
+use Symfony\Component\Console\Output\OutputInterface;
+
 /**
  * Class ConfigHelper
  * @package Mkvhost
@@ -13,22 +15,28 @@ class ConfigHelper
      */
     public function getConfig()
     {
-        // Check if the config exists.
-        $this->checkConfig();
-
         return json_decode(file_get_contents($this->getFilePath()), true);
     }
 
     /**
      * Ensures that the config file is in place.
      *
-     * @return bool
+     * @param \Symfony\Component\Console\Output\OutputInterface $output
      * @throws \Exception
+     * @return bool
      */
-    public function checkConfig()
+    public function checkConfig(OutputInterface $output)
     {
-        if (!file_exists($this->getFilePath()) && !$this->createConfig()) {
-            throw new \Exception('Could not create default config file in: '.$this->getFilePath());
+        if (!file_exists($this->getFilePath())) {
+            $output->writeln('<info>Config file does not exist. Trying to create in:</info> '.$this->getFilePath());
+
+            if (!$this->createConfig($output)) {
+                throw new \Exception('Could not create default config file in: ' . $this->getFilePath());
+            } else {
+                $output->writeln('<question>Config file created!</question>');
+            }
+        } else {
+            $output->writeln('<info>Using existing config file:</info> '.$this->getFilePath());
         }
 
         return true;
@@ -43,7 +51,16 @@ class ConfigHelper
     {
         $config = <<<EOT
 {
-    "virtualHostPath": "/etc/apache2/virtualhosts"
+    "virtualHostPath": "/etc/apache2/virtualhosts",
+    "rootPath": "",
+    "defaults": {
+        "options": "All",
+        "allowOverride": "All",
+        "order": "deny,allow",
+        "deny": "all",
+        "allow": "127.0.0.1",
+        "directoryIndex": "index.php index.html"
+    }
 }
 EOT;
 

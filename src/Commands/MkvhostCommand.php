@@ -2,6 +2,8 @@
 
 namespace Mkvhost\Commands;
 
+use Mkvhost\ConfigHelper;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Class MkvhostCommand
  * @package Mkvhost\Commands
  */
-class MkvhostCommand extends AbstractCommand
+class MkvhostCommand extends Command
 {
     /**
      * Configures the command.
@@ -36,20 +38,35 @@ class MkvhostCommand extends AbstractCommand
             );
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $name = $input->getArgument('name');
+        $name   = $input->getArgument('name');
+        $helper = new ConfigHelper();
 
-        if ($input->getOption('list')) {
-            $command = $this->getApplication()->find('list');
-            $command->run(new ArrayInput(array()), $output);
-        } else {
-            if ($name) {
-                $command = $this->getApplication()->find('make');
-                $command->run(new ArrayInput(array('name' => $name)), $output);
+        if ($helper->checkConfig($output)) {
+            // Add the hidden commands.
+            $this->getApplication()->add(new ListCommand());
+            $this->getApplication()->add(new MakeCommand());
+
+            // Process the command.
+            if ($input->getOption('list')) {
+                $command = $this->getApplication()->find('list');
+                $command->run(new ArrayInput(array()), $output);
             } else {
-                $output->writeln('No name specified');
+                if ($name) {
+                    $command = $this->getApplication()->find('make');
+                    $command->run(new ArrayInput(array('name' => $name)), $output);
+                } else {
+                    $output->writeln('No name specified');
+                }
             }
+        } else {
+            $output->writeln('<error>Could not initialize config!</error>');
         }
     }
 }

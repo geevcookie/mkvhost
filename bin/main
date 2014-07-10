@@ -12,9 +12,7 @@ include_once __DIR__.'/../vendor/autoload.php';
 // Create the app.
 $app = new Mkvhost();
 
-// Add the hidden commands.
-$app->add(new ListCommand());
-$app->add(new MakeCommand());
+
 
 // Run the application.
 $app->run();

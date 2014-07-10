@@ -2,13 +2,21 @@
 
 namespace Mkvhost\Commands;
 
+use Mkvhost\VHostHelper;
 use Symfony\Component\Console\Helper\DialogHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class MakeCommand
+ * @package Mkvhost\Commands
+ */
 class MakeCommand extends AbstractCommand
 {
+    /**
+     * Configures the command.
+     */
     public function configure()
     {
         $this
@@ -20,6 +28,11 @@ class MakeCommand extends AbstractCommand
             );
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         /** @var DialogHelper $dialog */
@@ -27,7 +40,7 @@ class MakeCommand extends AbstractCommand
         $name   = $input->getArgument('name');
 
         // First we want the document root of the virtual host.
-        $defaultDocRoot    = $this->config['documentRoot'] . '/' . $name;
+        $defaultDocRoot = $this->config['rootPath'] . '/' . $name;
         $autocompleteParts = array();
 
         // Set up auto complete hints.
@@ -39,7 +52,7 @@ class MakeCommand extends AbstractCommand
             }
         }
 
-        // Finally askt he user the questions.
+        // Finally ask the user the questions.
         $documentRoot = $dialog->askAndValidate(
             $output,
             'Please enter the full path to the directory root (<info>' . $defaultDocRoot . '</info>): ',
@@ -58,7 +71,7 @@ class MakeCommand extends AbstractCommand
         // Directory Options.
         $directoryOptions = $dialog->askAndValidate(
             $output,
-            'Set the directory options (Options <info>All</info>): ',
+            'Set the directory options (Options <info>'.$this->config['defaults']['options'].'</info>): ',
             function ($answer) {
                 if (strstr(strtolower($answer), 'options')) {
                     throw new \RuntimeException('\'Options\' keyword detected! This can be excluded.');
@@ -67,13 +80,13 @@ class MakeCommand extends AbstractCommand
                 return $answer;
             },
             false,
-            'All'
+            $this->config['defaults']['options']
         );
 
         // Override Options
         $overrideOptions = $dialog->askAndValidate(
             $output,
-            'Set the override options (AllowOverride <info>All</info>): ',
+            'Set the override options (AllowOverride <info>'.$this->config['defaults']['allowOverride'].'</info>): ',
             function ($answer) {
                 if (strstr(strtolower($answer), 'allowoverride')) {
                     throw new \RuntimeException('\'AllowOverride\' keyword detected! This can be excluded.');
@@ -82,13 +95,13 @@ class MakeCommand extends AbstractCommand
                 return $answer;
             },
             false,
-            'All'
+            $this->config['defaults']['allowOverride']
         );
 
         // Order Directive.
         $orderDirective = $dialog->askAndValidate(
             $output,
-            'Set the \'Order\' directive (Order <info>deny,allow</info>): ',
+            'Set the \'Order\' directive (Order <info>'.$this->config['defaults']['order'].'</info>): ',
             function ($answer) {
                 if (strstr(strtolower($answer), 'order')) {
                     throw new \RuntimeException('\'Order\' keyword detected! This can be excluded.');
@@ -97,14 +110,14 @@ class MakeCommand extends AbstractCommand
                 return $answer;
             },
             false,
-            'deny, allow',
+            $this->config['defaults']['order'],
             array('deny,allow', 'allow,deny')
         );
 
         // Deny Directive
         $denyDirective = $dialog->askAndValidate(
             $output,
-            'Set the \'Deny\' directive (Deny from <info>all</info>): ',
+            'Set the \'Deny\' directive (Deny from <info>'.$this->config['defaults']['deny'].'</info>): ',
             function ($answer) {
                 if (strstr(strtolower($answer), 'deny')) {
                     throw new \RuntimeException('\'Deny\' keyword detected! This can be excluded.');
@@ -113,13 +126,13 @@ class MakeCommand extends AbstractCommand
                 return $answer;
             },
             false,
-            'all'
+            $this->config['defaults']['deny']
         );
 
         // Allow Directive
         $allowDirective = $dialog->askAndValidate(
             $output,
-            'Set the \'Allow\' directive (Allow from <info>127.0.0.1</info>): ',
+            'Set the \'Allow\' directive (Allow from <info>'.$this->config['defaults']['allow'].'</info>): ',
             function ($answer) {
                 if (strstr(strtolower($answer), 'allow')) {
                     throw new \RuntimeException('\'Allow\' keyword detected! This can be excluded.');
@@ -128,13 +141,13 @@ class MakeCommand extends AbstractCommand
                 return $answer;
             },
             false,
-            '127.0.0.1'
+            $this->config['defaults']['allow']
         );
 
         // Directory Index
         $directoryIndex = $dialog->askAndValidate(
             $output,
-            'Set the directory index (DirectoryIndex <info>index.php index.html</info>): ',
+            'Set the directory index (DirectoryIndex <info>'.$this->config['defaults']['directoryIndex'].'</info>): ',
             function ($answer) {
                 if (strstr(strtolower($answer), 'directoryindex')) {
                     throw new \RuntimeException('\'DirectoryIndex\' keyword detected! This can be excluded.');
@@ -143,7 +156,7 @@ class MakeCommand extends AbstractCommand
                 return $answer;
             },
             false,
-            'index.php index.html'
+            $this->config['defaults']['directoryIndex']
         );
 
         // Environment Variables
@@ -186,11 +199,23 @@ class MakeCommand extends AbstractCommand
         );
 
         // Confirm virtual host.
-        $dialog->askConfirmation(
+        $confirmation = $dialog->askConfirmation(
             $output,
-            "<info>$virtualHost</info>\r\n<question>Enter to continue, CTRL-C to cancel:</question> ",
+            "<info>$virtualHost</info>\r\n<question>Is this correct (Y/n):</question> ",
             true
         );
+
+        if ($confirmation) {
+            $helper = new VHostHelper();
+
+            if ($helper->write($this->config['virtualHostPath'] . "/$name", $virtualHost)) {
+                $output->writeln('<info>VirtualHost created!</info>');
+            } else {
+                $output->writeln(
+                    '<error>Could not create VirtualHost! Please ensure that ' . $this->config['virtualHostPath'] . ' is writable.</error>'
+                );
+            }
+        }
     }
 
     /**
@@ -221,7 +246,7 @@ class MakeCommand extends AbstractCommand
      * @param string $deny
      * @param string $allow
      * @param string $index
-     * @param array  $envVars
+     * @param string $envVars
      * @return string
      */
     private function getVirtualHost($path, $domain, $options, $override, $order, $deny, $allow, $index, $envVars)
