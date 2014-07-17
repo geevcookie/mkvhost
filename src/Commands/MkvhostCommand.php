@@ -45,15 +45,20 @@ class MkvhostCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $name   = $input->getArgument('name');
-        $helper = new ConfigHelper();
+        $name = $input->getArgument('name');
 
-        if ($helper->checkConfig($output)) {
+        // Add the config command.
+        $this->getApplication()->add(new ConfigCommand());
+
+        // Run the config command to ensure that the config is set up.
+        $command = $this->getApplication()->find('config');
+        $code    = $command->run(new ArrayInput(array()), $output);
+
+        if ($code === 0) {
             // Add the hidden commands.
             $this->getApplication()->add(new ListCommand());
             $this->getApplication()->add(new MakeCommand());
 
-            // Process the command.
             if ($input->getOption('list')) {
                 $command = $this->getApplication()->find('list');
                 $command->run(new ArrayInput(array()), $output);
@@ -65,8 +70,6 @@ class MkvhostCommand extends Command
                     $output->writeln('No name specified');
                 }
             }
-        } else {
-            $output->writeln('<error>Could not initialize config!</error>');
         }
     }
 }
